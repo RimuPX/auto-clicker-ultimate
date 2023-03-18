@@ -70,7 +70,7 @@ class KeyBoardIO(object):
         )
         thread.start()
 
-        result: list[SaveStateDoing._StructRecordTarget] = []
+        result: list[KeyBoardIO._StructRecordTarget] = []
         frame = 1/framesPosPerSecond
         while not self.event_end_work_record:
             print("wait, do")
@@ -98,7 +98,7 @@ class KeyBoardIO(object):
         kb.restore_modifiers(state)
 
 
-temp = SaveStateDoing()
+temp = KeyBoardIO()
 
 data = temp.record("esc", framesPosPerSecond=60)
 
