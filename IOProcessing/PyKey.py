@@ -4,6 +4,10 @@ import keyboard as kb
 import pyautogui
 from dataclasses import dataclass
 
+# speed steps mouse
+
+
+
 class SaveStateDoing(object):
 
     @dataclass
@@ -16,7 +20,6 @@ class SaveStateDoing(object):
     event_end_work_record: bool = False
     def __init__(self):
         pass
-
 
     def __prepareProcessKeyEvent(self, triggerFn, finalizeFn, until: str, suppress: bool = False, trigger_on_release: bool = False):
         try:
@@ -82,9 +85,24 @@ class SaveStateDoing(object):
 
         return result
 
+    def play(self, inputData: list[_StructRecordTarget], buttonPressToStart: str = 'esc'):
+
+        state = kb.stash_state()
+        pyautogui.PAUSE = inputData[1]._time - inputData[0]._time
+        for object in inputData:
+            pos = object._posMouse
+            print(f"move {pos[0]}:{pos[1]}")
+            pyautogui.moveTo(pos[0], pos[1], duration=0)
+            #print("press",key) if event.event_type == kb.KEY_DOWN else print("realese", key)
+
+        kb.restore_modifiers(state)
+
+
 temp = SaveStateDoing()
 
-print(temp.record("esc"))
+data = temp.record("esc", framesPosPerSecond=60)
+
+temp.play(data)
 
 #
 # keyboard.press_and_release('shift+s, space')
