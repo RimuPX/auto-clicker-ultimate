@@ -8,7 +8,7 @@ from dataclasses import dataclass
 
 
 
-class SaveStateDoing(object):
+class KeyBoardIO(object):
 
     @dataclass
     class _StructRecordTarget:
