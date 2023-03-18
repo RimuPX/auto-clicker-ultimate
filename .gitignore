@@ -128,8 +128,5 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# Add-ons
+# InteliJ IDEA Support
 /.idea/
-cogs/__pycache__/
-cogs/lib/__pycache__/
-__pycache__/
