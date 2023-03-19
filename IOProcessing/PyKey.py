@@ -1,5 +1,9 @@
-from keyboard import _queue, _Event, _time, hook, unhook, add_hotkey, remove_hotkey
-import threading
+from keyboard import (_queue, _Event, _time,
+                      hook, unhook,
+                      add_hotkey, remove_hotkey,
+                      press, release,
+                      KEY_UP, KEY_DOWN)
+from threading import Thread
 import keyboard as kb
 import pyautogui
 from dataclasses import dataclass
@@ -15,11 +19,15 @@ class KeyBoardIO(object):
         _time: float = 0
         _posMouse: tuple = (0, 0)
         _keyEvents: list[object] = None
-
+        _mouseClick: bool = False # ???
 
     event_end_work_record: bool = False
+    event_end_work_Loop: bool = False
+
     def __init__(self):
         pass
+
+
 
     def __prepareProcessKeyEvent(self, triggerFn, finalizeFn, until: str, suppress: bool = False, trigger_on_release: bool = False):
         try:
@@ -56,9 +64,9 @@ class KeyBoardIO(object):
             print("key board record thread end work")
 
         def add_list(*args, **kwargs):
-            list_args.append(args)
+            list_args.append(args[0])
 
-        thread = threading.Thread(
+        thread = Thread(
             target=self.__prepareProcessKeyEvent,
             args=(
                 add_list,
@@ -85,24 +93,43 @@ class KeyBoardIO(object):
 
         return result
 
-    def play(self, inputData: list[_StructRecordTarget], buttonPressToStart: str = 'esc'):
+    def play(self, inputData: list[_StructRecordTarget], buttonPressToStart: str = 'esc', speed_factor:float = 1):
 
         state = kb.stash_state()
         pyautogui.PAUSE = inputData[1]._time - inputData[0]._time
+
+
+
         for object in inputData:
+            # -- move mouse --
             pos = object._posMouse
-            print(f"move {pos[0]}:{pos[1]}")
+            events = object._keyEvents
+            print(f"move {pos[0]}:{pos[1]}, events {events}")
             pyautogui.moveTo(pos[0], pos[1], duration=0)
-            #print("press",key) if event.event_type == kb.KEY_DOWN else print("realese", key)
+
+            last_time = None
+            if not events: continue
+
+            # -- press keys, if have (events) --
+            for event in events:
+                if speed_factor > 0 and last_time is not None:
+                    _time.sleep((event.time - last_time) / speed_factor)
+                last_time = event.time
+
+                key = event.scan_code or event.name
+                print(key)
+                press(key) if event.event_type == KEY_DOWN else release(key)
 
         kb.restore_modifiers(state)
 
 
-temp = KeyBoardIO()
+if __name__ == "__main__":
 
-data = temp.record("esc", framesPosPerSecond=60)
+    temp = KeyBoardIO()
 
-temp.play(data)
+    data = temp.record("esc", framesPosPerSecond=30)
+
+    temp.play(data)
 
 #
 # keyboard.press_and_release('shift+s, space')
