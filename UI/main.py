@@ -19,11 +19,12 @@ def inBoxBound(position: QPoint, widget: QWidget, centralWidget: QWidget) -> boo
 
 class ClickableWidget(QWidget):
     def __init__(self, window):
-        super().__init__(window)
+        super().__init__()
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super(QMainWindow, self).__init__()
+
         # Defines starting size and minimum size for main window
         divFactor = 3
         divFactor = int(round(divFactor))
