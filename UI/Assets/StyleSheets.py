@@ -1,9 +1,10 @@
+from PyQt6.QtGui import QColor
+
+titlebarImageColor = QColor(74, 74, 103)
+titleBarSelectedImageColor = QColor(255, 255, 255)
+
 titleBar = """
 background-color: rgb(38, 38, 50);
-"""
-
-titleButton = """
-border-radius: 8;
 """
 
 lightBox = """

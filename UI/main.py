@@ -1,10 +1,19 @@
 import sys
 from PyQt6.QtWidgets import *
 from PyQt6.QtCore import Qt, QPoint
-from PyQt6.QtGui import QFont, QFontDatabase, QPixmap
+from PyQt6.QtGui import QFont, QFontDatabase, QPixmap, QImage, QColor
 from Assets import StyleSheets
 
 app = QApplication(sys.argv)
+
+def recolorPixmap(pixmap: QPixmap, color: QColor):
+    tmpImage = pixmap.toImage()
+
+    for x in range(tmpImage.width()):
+        for y in range(tmpImage.height()):
+            tmpImage.setPixelColor(x, y, QColor(color.red(), color.green(), color.blue(), tmpImage.pixelColor(x, y).alpha()))
+
+    return QPixmap.fromImage(tmpImage)
 
 class QTitleBar(QLabel):
     def __init__(self, window: QMainWindow):
@@ -27,15 +36,26 @@ class QTitleBar(QLabel):
         super().mouseReleaseEvent(event)
 
 class QTitleButton(QLabel):
-    def __init__(self, TitleBar: QLabel, pos: int):
+    def __init__(self, TitleBar: QLabel, pos: int, selectedColor: QColor, selectedBgColor: QColor):
         super(QTitleButton, self).__init__()
 
-        self.setStyleSheet("background-color: red;" + StyleSheets.titleButton)
+        self.setStyleSheet("background-color: red;") #+ StyleSheets.titleButton)
         self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
-        buttonHeight = TitleBar.height() - TitleBar.layout().getContentsMargins()[1] - TitleBar.layout().getContentsMargins()[3]
+        buttonHeight = round(TitleBar.height() * 1.6) #- TitleBar.layout().getContentsMargins()[1] - TitleBar.layout().getContentsMargins()[3]
         self.setFixedWidth(buttonHeight)
         self.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
         TitleBar.layout().addWidget(self, pos)
+
+        self.selectedColor = selectedColor
+        self.selectedBgColor = selectedBgColor
+
+    def enterEvent(self, *args, **kwargs):
+        self.setPixmap(recolorPixmap(self.pixmap(), self.selectedColor))
+        self.setStyleSheet("background-color: rgb(255, 0, 0);")
+
+    def leaveEvent(self, *args, **kwargs):
+        self.setPixmap(recolorPixmap(self.pixmap(), StyleSheets.titlebarImageColor))
+        self.setStyleSheet("background-color: transparent;")
 
 
 
@@ -72,7 +92,7 @@ class MainWindow(QMainWindow):
         self.MainLayout.setSizeConstraint(QLayout.SizeConstraint.SetDefaultConstraint)
 
         # Creates custom title bar
-        self.TitleEdgeOffset = 4
+        self.TitleEdgeOffset = 0
 
         self.TitleBar = QTitleBar(self)
         self.TitleBar.setStyleSheet(StyleSheets.titleBar)
@@ -99,8 +119,15 @@ class MainWindow(QMainWindow):
         self.TitleBar.layout().insertSpacing(2, self.screenSize.width())
 
         # Creates custom titlebar buttons
-        self.ExitButton = QTitleButton(self.TitleBar, 0)
-        self.MinimizeButton = QTitleButton(self.TitleBar, 0)
+        self.ExitButton = QTitleButton(self.TitleBar, 0, QColor(255, 255, 255), QColor(255, 0, 16))
+        self.CrossIcon = QPixmap("Assets/Icons/close.svg")
+        self.CrossIcon = self.CrossIcon.scaledToHeight(round(self.TitleBar.height() / 1.5))
+        self.CrossIcon = recolorPixmap(self.CrossIcon, QColor(255, 255, 255))
+        self.ExitButton.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.ExitButton.setPixmap(self.CrossIcon)
+        self.ExitButton.mousePressEvent = exit
+
+        #self.MinimizeButton = QTitleButton(self.TitleBar, 0)
 
 
         # Sets up container for command nodes
@@ -138,6 +165,9 @@ class MainWindow(QMainWindow):
 
         self.CornerGripWidget = QSizeGrip(self.CentralWidget)
         self.CornerGripWidget.setStyleSheet("background-color: rgb(255, 0, 0);")
+
+    def exit(self, event):
+        app.quit()
 
     def resizeEvent(self, event) -> None:
         # Reposition scaling corner
