@@ -169,12 +169,9 @@ class MainWindow(QMainWindow):
         app.quit()
 
     def minimize(self, event):
-        #self.setWindowState(Qt.WindowState.WindowMinimized)
-        self.setVisible(False)
+        self.setWindowState(Qt.WindowState.WindowMinimized)
 
     def showEvent(self, a0) -> None:
-        self.setVisible(True)
-
         self.activateWindow()
         self.setFocus()
         self.setWindowState(Qt.WindowState.WindowActive)
