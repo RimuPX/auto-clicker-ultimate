@@ -15,6 +15,28 @@ def recolorPixmap(pixmap: QPixmap, color: QColor):
 
     return QPixmap.fromImage(tmpImage)
 
+class QPropertyBox(QLabel):
+    def __init__(self):
+        super(QPropertyBox, self).__init__()
+        self.setObjectName("PropertyBox")
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.setLayout(QVBoxLayout())
+
+    def ShowProperties(self):
+        n=0
+
+class QNode(QLabel):
+    def __init__(self, height: int, font: QFont, PropertyBox: QPropertyBox):
+        super(QNode, self).__init__("Cycle")
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.setFixedHeight(height)
+        self.setStyleSheet(StyleSheets.MainSheet)
+        self.setFont(font)
+        self.setContentsMargins(5, 0, 0, 4)
+
+        self.Properties = {"Action: ": "Space", "Hold for: ": 12}
+
+
 class QTitleBar(QLabel):
     def __init__(self, window: QMainWindow):
         super(QTitleBar, self).__init__()
@@ -70,6 +92,7 @@ class MainWindow(QMainWindow):
         # Adds font to database
         QFontDatabase.addApplicationFont("Assets/Fonts/Sublima-ExtraBold.otf")
         self.PropertyFont = QFont("Sublima ExtraBold", 18)
+        self.NodeFont = QFont("Sublima ExtraBold", 16)
 
         # Defines starting size and minimum size for main window
         self.windowScaleFactor = 3
@@ -86,7 +109,6 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(CentralWidget)
 
         # Set window attributes
-        #self.setWindowFlag(Qt.WindowType.FramelessWindowHint)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
 
         # Sets up main window's layout
@@ -138,11 +160,20 @@ class MainWindow(QMainWindow):
         # Sets up container for command nodes
         self.NodeBox = QWidget(self.centralWidget())
         self.NodeBox.setObjectName("NodeBox")
-        self.NodeBox.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.NodeBox.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
         self.NodeBox.setFixedWidth(self.width() // 3)
         self.NodeBox.setLayout(QVBoxLayout())
+        self.NodeBox.layout().setContentsMargins(8, 8, 8, 8)
+        self.NodeBox.layout().setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
 
         self.MainLayout.addWidget(self.NodeBox, 1, 0, 1, 1)
+
+        # Cretes nodes
+        self.NodeHeight = self.geometry().height() // 12
+
+        self.Cycle = QNode(self.NodeHeight, self.NodeFont, self.PropertyFont)
+        self.Cycle.setObjectName("Cycle")
+        self.NodeBox.layout().addWidget(self.Cycle)
 
         # Sets up container for command nodes' properties
         self.PropertyContainer = QWidget(self.centralWidget())
@@ -157,10 +188,7 @@ class MainWindow(QMainWindow):
         self.PropertyTitle.setObjectName("PropertyTitle")
         self.PropertyContainer.layout().addWidget(self.PropertyTitle)
 
-        self.PropertyBox = QWidget(self.centralWidget())
-        self.PropertyBox.setObjectName("PropertyBox")
-        self.PropertyBox.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        self.PropertyBox.setLayout(QVBoxLayout())
+        self.PropertyBox = QPropertyBox()
         self.PropertyContainer.layout().addWidget(self.PropertyBox)
 
         self.MainLayout.addWidget(self.PropertyContainer, 1, 1, 1, 1)
@@ -169,7 +197,7 @@ class MainWindow(QMainWindow):
         app.quit()
 
     def minimize(self, event):
-        self.setWindowState(Qt.WindowState.WindowMinimized)
+        self.showMinimized()
 
     def showEvent(self, a0) -> None:
         self.activateWindow()
@@ -178,8 +206,6 @@ class MainWindow(QMainWindow):
         self.raise_()
 
         self.centralWidget().activateWindow()
-
-        print(self.isActiveWindow())
 
 
 

@@ -3,73 +3,66 @@ from PyQt6.QtGui import QColor
 titlebarImageColor = QColor(74, 74, 103)
 titleBarSelectedImageColor = QColor(255, 255, 255)
 
+BackgroundColor = "rgb(32, 32, 42);"
+TitleBarColor = "rgb(38, 38, 50)"
+ExitButtonColor = "rgb(255, 38, 50)"
+MidColor = "rgb(35, 35, 47)"
+BrightTextColor = "rgb(255, 255, 255)"
+HighlightColor = "rgb(74, 74, 103)"
+
 MainSheet = """
 
 QWidget#CentralWidget {
-background-color: rgb(32, 32, 42);
+background-color: """ + BackgroundColor + """;
 }
 
 
 
 QWidget#TitleBar {
-background-color: rgb(38, 38, 50);
+background-color: """ + TitleBarColor + """;
 }
 
 QWidget#ExitButton {
 background-color: transparent;
 }
+
 QWidget::hover#ExitButton {
-background-color: rgb(255, 38, 50);
+background-color: """ + ExitButtonColor + """;
 }
 
 QWidget#MinimizeButton {
 background-color: transparent;
 }
+
 QWidget::hover#MinimizeButton {
-background-color: rgb(74, 74, 103);
+background-color: """ + HighlightColor + """;
 }
 
 QWidget#Title {
-color: rgb(74, 74, 103);
+color: """ + HighlightColor + """;
 }
 
 
 
 QWidget#NodeBox {
-background-color: rgb(35, 35, 47);
+background-color: """ + MidColor + """;
 }
 
 QWidget#PropertyBox {
-background-color: rgb(35, 35, 47);
+background-color: """ + MidColor + """;
 border-radius: 5;
 }
+
 QWidget#PropertyTitle {
-color: rgb(255, 255, 255);
+color: """ + BrightTextColor + """;
 }
 
-"""
 
 
-titleBar = """
-background-color: rgb(38, 38, 50);
-"""
+QWidget#Cycle {
+background-color: """ + HighlightColor + """;
+color: """ + BrightTextColor + """;
+border-radius: 8;
+}
 
-lightBox = """
-background-color: rgb(35, 35, 47);
-"""
-
-darkBox = """
-background-color: rgb(32, 32, 42);
-"""
-
-lightText = """
-color: rgb(74, 74, 103);
-"""
-
-titleText = """
-color: rgb(255, 255, 255);
-"""
-
-roundedParam = """
-border-radius: 5;
 """
