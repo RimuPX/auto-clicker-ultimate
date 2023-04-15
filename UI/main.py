@@ -1,10 +1,18 @@
 import sys
 from PyQt6.QtWidgets import *
-from PyQt6.QtCore import Qt, QPoint
-from PyQt6.QtGui import QFont, QFontDatabase, QPixmap, QImage, QColor
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QFont, QFontDatabase, QPixmap, QColor
 from Assets import StyleSheets
 
 app = QApplication(sys.argv)
+
+def setShadow(widget: QWidget):
+    ShadowEffect = QGraphicsDropShadowEffect()
+    ShadowEffect.setBlurRadius(25)
+    ShadowEffect.setColor(QColor(19, 50, 158, 100))
+    ShadowEffect.setOffset(0, 3)
+
+    widget.setGraphicsEffect(ShadowEffect)
 
 def recolorPixmap(pixmap: QPixmap, color: QColor):
     tmpImage = pixmap.toImage()
@@ -26,8 +34,11 @@ class QPropertyBox(QLabel):
         n=0
 
 class QNode(QLabel):
-    def __init__(self, height: int, font: QFont, PropertyBox: QPropertyBox):
-        super(QNode, self).__init__("Cycle")
+    selectedNodes = {}
+
+    def __init__(self, name: str, height: int, font: QFont):
+        super(QNode, self).__init__(name)
+        self.setObjectName("Node")
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.setFixedHeight(height)
         self.setStyleSheet(StyleSheets.MainSheet)
@@ -36,54 +47,59 @@ class QNode(QLabel):
 
         self.Properties = {"Action: ": "Space", "Hold for: ": 12}
 
-
-class QTitleBar(QLabel):
-    def __init__(self, window: QMainWindow):
-        super(QTitleBar, self).__init__()
-        self.parentWindow = window
-        self.pressOffset = None
-
     def mousePressEvent(self, event) -> None:
-        if event.button() == Qt.MouseButton.LeftButton:
-            self.pressOffset = event.pos()
-        super().mousePressEvent(event)
+        self.setObjectName("SelectedNode")
+        self.setStyleSheet(StyleSheets.MainSheet)
 
-    def mouseMoveEvent(self, event) -> None:
-        if self.pressOffset is not None and event.buttons() == Qt.MouseButton.LeftButton:
-            self.parentWindow.move(self.parentWindow.pos() + event.pos() - self.pressOffset)
-        super().mousePressEvent(event)
+    def delete(self):
+        self.parent().layout().removeWidget(self)
+        self.deleteLater()
 
-    def mouseReleaseEvent(self, event) -> None:
-        self.pressOffset = None
-        super().mouseReleaseEvent(event)
+class QNodeBox(QLabel):
+    def __init__(self, propertyFont: QFont):
+        super(QNodeBox, self).__init__()
 
-class QTitleButton(QLabel):
-    def __init__(self, TitleBar: QLabel, pixmapPath: str):
-        super(QTitleButton, self).__init__()
-
-        buttonHeight = round(TitleBar.height() * 1.6)
-
+        # Constructs node box
+        self.setObjectName("NodeBox")
         self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
-        self.setFixedWidth(buttonHeight)
-        self.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        self.setFixedWidth(self.width() // 3)
+        self.setLayout(QGridLayout())
+        self.layout().setContentsMargins(8, 8, 8, 8)
+        self.layout().setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
 
-        self.setPixmap(QPixmap(pixmapPath))
-        self.setPixmap(self.pixmap().scaledToHeight(round(TitleBar.height() / 1.5)))
-        self.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.nodeHeight = self.geometry().height() // 18
+        self.nodeFont = QFont("Sublima ExtraBold", 14)
 
-        TitleBar.layout().addWidget(self)
+        # Creates essential widgets
+        self.Loop = QNode("Loop", self.nodeHeight * 4 // 3, propertyFont)
+        self.layout().addWidget(self.Loop, 0, 0, 1, 2)
 
-    def enable(self):
-        self.setPixmap(recolorPixmap(self.pixmap(), StyleSheets.titleBarSelectedImageColor))
-    def enterEvent(self, *args, **kwargs):
-        self.enable()
+        self.NodeList = QWidget(self)
+        self.NodeList.setLayout(QVBoxLayout())
+        self.NodeList.layout().setContentsMargins(0, 0, 0, 0)
+        self.NodeList.layout().setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
+        self.layout().addWidget(self.NodeList, 1, 1, 1, 1)
 
-    def disable(self):
-        self.setPixmap(recolorPixmap(self.pixmap(), StyleSheets.titlebarImageColor))
-    def leaveEvent(self, *args, **kwargs):
-        self.disable()
+        self.NodeActionPanel = QWidget(self)
+        self.NodeActionPanel.setObjectName("Node")
 
+        self.layout().addWidget(self.NodeActionPanel, 2, 0, 1, 2)
 
+        # Sets spacings
+        self.spacing = 6
+        self.layout().setSpacing(self.spacing)
+        self.NodeList.layout().setSpacing(self.spacing)
+
+        # Sets cell proportions
+        self.layout().setRowStretch(0, 3)
+        self.layout().setRowStretch(1, 12)
+        self.layout().setRowStretch(2, 1)
+        self.layout().setColumnStretch(0, 1)
+        self.layout().setColumnStretch(1, 16)
+
+    def addNode(self):
+        node = QNode("Loop", self.nodeHeight, self.nodeFont)
+        self.NodeList.layout().addWidget(node)
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -91,8 +107,7 @@ class MainWindow(QMainWindow):
 
         # Adds font to database
         QFontDatabase.addApplicationFont("Assets/Fonts/Sublima-ExtraBold.otf")
-        self.PropertyFont = QFont("Sublima ExtraBold", 18)
-        self.NodeFont = QFont("Sublima ExtraBold", 16)
+        self.propertyFont = QFont("Sublima ExtraBold", 18)
 
         # Defines starting size and minimum size for main window
         self.windowScaleFactor = 3
@@ -114,84 +129,51 @@ class MainWindow(QMainWindow):
         # Sets up main window's layout
         self.MainLayout = QGridLayout()
         self.centralWidget().setLayout(self.MainLayout)
-        self.MainLayout.setContentsMargins(0, 0, 0, 0)
-        self.MainLayout.setSpacing(0)
+        self.MainLayout.setContentsMargins(10, 10, 10, 10)
+        self.MainLayout.setSpacing(10)
         self.MainLayout.setSizeConstraint(QLayout.SizeConstraint.SetDefaultConstraint)
 
-        # Creates custom title bar
-        self.titleEdgeOffset = 0
-        self.titleBarScaleFactor = 50
+        # Sets up container for nodes
+        self.NodeBox = QNodeBox(self.propertyFont)
+        self.NodeBox.addNode()
+        self.NodeBox.addNode()
 
-        self.TitleBar = QTitleBar(self)
-        self.TitleBar.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        self.TitleBar.setFixedHeight(self.screenSize.height() // self.titleBarScaleFactor)
-        self.TitleBar.setLayout(QHBoxLayout())
-        self.TitleBar.layout().setContentsMargins(self.titleEdgeOffset, self.titleEdgeOffset, self.titleEdgeOffset, self.titleEdgeOffset)
-        self.TitleBar.layout().setSpacing(self.titleEdgeOffset)
-        self.TitleBar.setObjectName("TitleBar")
-        self.MainLayout.addWidget(self.TitleBar, 0, 0, 1, 2)
+        self.MainLayout.setRowStretch(0, 7)
+        self.MainLayout.addWidget(self.NodeBox, 0, 0, 1, 1)
 
-        # Creates title and icon
-        self.Logo = QLabel()
-        self.logoPixmap = QPixmap("Assets/Icons/Logo.png")
-        self.logoPixmap = self.logoPixmap.scaledToHeight(self.TitleBar.height() - self.titleEdgeOffset * 2)
-        self.Logo.setFixedSize(self.TitleBar.height(), self.TitleBar.height())
-        self.Logo.setPixmap(self.logoPixmap)
-        self.TitleBar.layout().addWidget(self.Logo)
+        # Creates a panel with context buttons
+        self.actionPanelScaleFactor = 8
 
-        self.Title = QLabel("Macro Ultimate")
-        self.Title.setFont(QFont("Sublima ExtraBold", 10))
-        self.Title.setObjectName("Title")
-        self.TitleBar.layout().addWidget(self.Title)
-
-        self.TitleBar.layout().insertSpacing(2, self.screenSize.width())
-
-        # Creates custom titlebar buttons
-        self.MinimizeButton = QTitleButton(self.TitleBar, "Assets/Icons/minimize.svg")
-        self.MinimizeButton.disable()
-        self.MinimizeButton.setObjectName("MinimizeButton")
-        self.MinimizeButton.mousePressEvent = self.minimize
-
-        self.ExitButton = QTitleButton(self.TitleBar, "Assets/Icons/exit.svg")
-        self.ExitButton.disable()
-        self.ExitButton.setObjectName("ExitButton")
-        self.ExitButton.mousePressEvent = self.exit
-
-        # Sets up container for command nodes
-        self.NodeBox = QWidget(self.centralWidget())
-        self.NodeBox.setObjectName("NodeBox")
-        self.NodeBox.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
-        self.NodeBox.setFixedWidth(self.width() // 3)
-        self.NodeBox.setLayout(QVBoxLayout())
-        self.NodeBox.layout().setContentsMargins(8, 8, 8, 8)
-        self.NodeBox.layout().setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
-
-        self.MainLayout.addWidget(self.NodeBox, 1, 0, 1, 1)
-
-        # Cretes nodes
-        self.NodeHeight = self.geometry().height() // 12
-
-        self.Cycle = QNode(self.NodeHeight, self.NodeFont, self.PropertyFont)
-        self.Cycle.setObjectName("Cycle")
-        self.NodeBox.layout().addWidget(self.Cycle)
+        self.ActionPanel = QWidget(self.centralWidget())
+        self.ActionPanel.setObjectName("NodeBox")
+        self.ActionPanel.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.ActionPanel.setFixedWidth(self.NodeBox.width())
+        self.ActionPanel.setFixedHeight(self.height() // self.actionPanelScaleFactor)
+        self.MainLayout.addWidget(self.ActionPanel, 1, 0, 1, 1)
+        self.MainLayout.setRowStretch(1, 1)
 
         # Sets up container for command nodes' properties
-        self.PropertyContainer = QWidget(self.centralWidget())
-        self.PropertyContainer.setObjectName("PropertyContainer")
-        self.PropertyContainer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        self.PropertyContainer.setLayout(QVBoxLayout())
-        self.PropertyContainer.layout().setContentsMargins(10, 0, 10, 10)
+        self.PropertyBox = QPropertyBox()
+        self.MainLayout.addWidget(self.PropertyBox)
+        self.PropertyBox.setObjectName("PropertyBox")
+        self.PropertyBox.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.PropertyBox.setLayout(QVBoxLayout())
+        self.PropertyBox.layout().setContentsMargins(10, 0, 10, 10)
+        self.PropertyBox.layout().setSpacing(10)
+        self.PropertyBox.layout().setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
 
         # Sets up property section elements
         self.PropertyTitle = QLabel("Properties")
-        self.PropertyTitle.setFont(self.PropertyFont)
+        self.PropertyTitle.setFont(self.propertyFont)
         self.PropertyTitle.setObjectName("PropertyTitle")
-        self.PropertyContainer.layout().addWidget(self.PropertyTitle)
+        self.PropertyBox.layout().addWidget(self.PropertyTitle)
 
-        self.PropertyBox = QPropertyBox()
-        self.PropertyContainer.layout().addWidget(self.PropertyBox)
+        self.MainLayout.addWidget(self.PropertyBox, 0, 1, self.MainLayout.rowCount() - 1, 1)
 
-        self.MainLayout.addWidget(self.PropertyContainer, 1, 1, 1, 1)
+
+        setShadow(self.ActionPanel)
+        setShadow(self.NodeBox)
+        setShadow(self.PropertyBox)
 
     def exit(self, event):
         app.quit()
