@@ -3,6 +3,8 @@ from PyQt6.QtWidgets import *
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont
 
+from HelpfulFuncs import *
+
 
 
 propertyFont = QFont("Sublima ExtraBold", 18)
@@ -10,8 +12,6 @@ propertyFont = QFont("Sublima ExtraBold", 18)
 class QPropertyBox(QLabel):
     def __init__(self):
         super(QPropertyBox, self).__init__()
-
-        setShadow(self)
 
         self.setObjectName("Box")
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)

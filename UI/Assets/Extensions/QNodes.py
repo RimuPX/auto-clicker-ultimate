@@ -2,6 +2,10 @@ from PyQt6.QtWidgets import *
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont
 
+from HelpfulFuncs import *
+
+m()
+
 propertyFont = QFont("Sublima ExtraBold", 18)
 MainSheet = ""
 
@@ -23,6 +27,7 @@ class QActionButton(QLabel):
         super(QActionButton, self).__init__(sign)
         self.font = QFont(font.family(), 13)
         self.setFont(self.font)
+
 
 class QNode(QLabel):
     selectedNodes = {}
