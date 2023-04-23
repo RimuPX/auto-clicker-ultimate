@@ -1,78 +1,165 @@
-from PyQt6.QtWidgets import *
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QFont
 
-from HelpfulFuncs import *
-
-m()
-
-propertyFont = QFont("Sublima ExtraBold", 18)
-MainSheet = ""
+from Assets.Extensions.HelpfulFuncs import *
+from Assets.StyleSheets import *
 
 class QActionPanel(QLabel):
+
+    __instance = None
+    hasInstance = False
+
+    def __new__(cls, *args):
+        if not cls.__instance:
+            cls.__instance = super(QActionPanel, cls).__new__(cls)
+        return cls.__instance
+
     def __init__(self, parent: QWidget):
+        if QActionPanel.hasInstance: return
+
         super(QActionPanel, self).__init__(parent)
 
-        self.actionPanelScaleFactor = 8
+        self.scaleFactor = 8
 
         self.setObjectName("Box")
         self.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
-        #self.setFixedWidth(200)
-        self.setFixedHeight(parent.height() // self.actionPanelScaleFactor)
-        parent.layout().addWidget(self, 1, 0, 1, 1)
-        parent.layout().setRowStretch(1, 1)
+        self.setFixedHeight(parent.height())
+        setShadow(self)
+
+        QActionPanel.hasInstance = True
 
 class QActionButton(QLabel):
-    def __init__(self, sign: str, font: QFont):
+    def __init__(self, sign: str):
         super(QActionButton, self).__init__(sign)
-        self.font = QFont(font.family(), 13)
-        self.setFont(self.font)
-
+        self.setFont(QFont(MainSheet.propertyFont.family(), 13))
 
 class QNode(QLabel):
-    selectedNodes = {}
+    selectedNodes = []
+    lastSelectedNode = None
+    NodeLayout = None
 
-    def __init__(self, name: str, height: int, font: QFont):
+    @staticmethod
+    def selectNodes(nodes):
+        for node in nodes:
+            node.setObjectName("SelectedNode")
+            node.setStyleSheet(MainSheet.Sheet)
+            if not node in QNode.selectedNodes: QNode.selectedNodes.append(node)
+
+    @staticmethod
+    def deselectNodes(nodes):
+        selectedNodeBuffer = []
+        for node in QNode.selectedNodes:
+            if not node in nodes:
+                selectedNodeBuffer.append(node)
+            else:
+                node.setObjectName("Node")
+                node.setStyleSheet(MainSheet.Sheet)
+        QNode.selectedNodes = selectedNodeBuffer
+
+    def __init__(self, name: str, height: int, parent: QWidget):
         super(QNode, self).__init__(name)
         self.setObjectName("Node")
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.setFixedHeight(height)
-        self.setStyleSheet(MainSheet)
-        self.setFont(font)
+        self.setStyleSheet(MainSheet.Sheet)
+        self.setFont(QFont(MainSheet.propertyFont.family(), 14))
         self.setContentsMargins(5, 0, 0, 4)
+
+        parent.layout().addWidget(self)
+
+        self.window().mouseMoveEvent = self.mouseMoved
 
         self.Properties = {"Action: ": "Space", "Hold for: ": 12}
 
-    def mousePressEvent(self, event) -> None:
-        self.setObjectName("SelectedNode")
-        self.setStyleSheet(MainSheet)
+    @staticmethod
+    def selectRange(p1: int, p2: int):
+        pStart = min(p1, p2)
+        pEnd = max(p1, p2)
+
+        if pStart == -1:
+            QNode.selectNodes([QLoop.getInstance()])
+            pStart = max(0, pStart)
+
+        for i in range(pStart, pEnd + 1):
+            QNode.selectNodes([QNode.NodeLayout.itemAt(i).widget()])
+
+    def mousePressEvent(self, event):
+        controlDown = self.window().controlDown
+        shiftDown = self.window().shiftDown
+
+        if controlDown:
+            if not self in QNode.selectedNodes:
+                QNode.selectNodes([self])
+            elif not shiftDown:
+                QNode.deselectNodes([self])
+        else:
+            QNode.deselectNodes(QNode.selectedNodes)
+            QNode.selectNodes([self])
+
+        if shiftDown:
+            QNode.selectRange(QNode.NodeLayout.indexOf(self), QNode.NodeLayout.indexOf(QNode.lastSelectedNode))
+        else:
+            QNode.lastSelectedNode = self
+
+    def mouseMoved(self, event):
+        pass
 
     def delete(self):
         self.parent().layout().removeWidget(self)
         self.deleteLater()
 
-class QNodeBox(QLabel):
-    def __init__(self, styleSheet: str):
-        super(QNodeBox, self).__init__()
+class QLoop(QNode):
 
-        MainSheet = styleSheet
+    __instance = None
+    hasInstance = False
+
+    @staticmethod
+    def getInstance(): return QLoop.__instance
+
+    def __new__(cls, *args):
+        if not cls.__instance:
+            cls.__instance = super(QLoop, cls).__new__(cls)
+        return cls.__instance
+
+    def __init__(self, parent):
+        if QLoop.hasInstance: return
+
+        super(QLoop, self).__init__("Loop", int(MainSheet.propertyFont.pointSize() * 2.2), parent)
+        self.setFont(QFont(MainSheet.propertyFont.family(), 18))
+        QNode.lastSelectedNode = self
+
+        QLoop.hasInstance = True
+
+class QNodeBox(QLabel):
+
+    __instance = None
+    hasInstance = False
+
+    def __new__(cls, *args):
+        if not cls.__instance:
+            cls.__instance = super(QNodeBox, cls).__new__(cls)
+        return cls.__instance
+
+    def __init__(self):
+        if QNodeBox.hasInstance: return
+
+        super(QNodeBox, self).__init__()
 
         # Constructs node box
         self.setObjectName("Box")
         self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
         self.setFixedWidth(self.width() // 3)
-        self.setLayout(QGridLayout())
-        self.layout().setContentsMargins(8, 8, 8, 8)
+        self.setLayout(QVBoxLayout())
+        self.layout().setContentsMargins(0, 0, 0, 0)
         self.layout().setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
+        setShadow(self)
 
+        # Sets up node parameteres
         self.nodeHeight = self.geometry().height() // 18
-        self.nodeFont = QFont("Sublima ExtraBold", 14)
 
         self.NodeList = QWidget(self)
         self.NodeList.setLayout(QVBoxLayout())
         self.NodeList.layout().setContentsMargins(0, 0, 0, 0)
         self.NodeList.layout().setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
-        self.layout().addWidget(self.NodeList, 1, 0, 1, 2)
 
         self.NodeActionPanel = QWidget(self)
         self.NodeActionPanel.setLayout(QHBoxLayout())
@@ -81,32 +168,41 @@ class QNodeBox(QLabel):
         self.NodeActionPanel.layout().setContentsMargins(0, 0, 0, 0)
         self.NodeActionPanel.setFixedHeight(20)
 
-        self.AddButton = QActionButton("+", self.nodeFont)
-        self.RemoveButton = QActionButton("-", self.nodeFont)
+        self.AddButton = QActionButton("+")
+        self.RemoveButton = QActionButton("-")
 
         self.NodeActionPanel.layout().addWidget(self.RemoveButton)
         self.NodeActionPanel.layout().addWidget(self.AddButton)
 
-        self.layout().addWidget(self.NodeActionPanel, 2, 0, 1, 2)
+        # Sets cell proportions
+        self.layout().setStretch(0, 3)
+        self.layout().setStretch(1, 12)
+        self.layout().setStretch(2, 1)
 
         # Sets spacings
-        self.spacing = 6
+        self.spacing = 0
         self.layout().setSpacing(self.spacing)
         self.NodeList.layout().setSpacing(self.spacing)
-
-        # Sets cell proportions
-        self.layout().setRowStretch(0, 3)
-        self.layout().setRowStretch(1, 12)
-        self.layout().setRowStretch(2, 1)
-        self.layout().setColumnStretch(0, 1)
-        self.layout().setColumnStretch(1, 16)
+        QNode.NodeLayout = self.NodeList.layout()
 
         # Creates essential widgets
-        self.Loop = QNode("Loop", self.nodeHeight * 4 // 3, propertyFont)
-        self.layout().addWidget(self.Loop, 0, 0, 1, 2)
+        self.Loop = QLoop(self)
+        self.l = QLoop(self)
         self.addNode("Alt + F")
         self.addNode("X")
+        self.addNode("F")
+        self.addNode("M")
+
+        # Adds widgets to layout
+        self.layout().addWidget(self.Loop, 0)
+        self.layout().addWidget(self.NodeList, 1)
+        self.layout().addWidget(self.NodeActionPanel, 2)
+
+        QNodeBox.hasInstance = True
+
+    def mousePressEvent(self, event):
+        QNode.deselectNodes(QNode.selectedNodes)
+        super().mousePressEvent(event)
 
     def addNode(self, name: str):
-        node = QNode(name, self.nodeHeight, self.nodeFont)
-        self.NodeList.layout().addWidget(node)
+        node = QNode(name, self.nodeHeight, self.NodeList)
