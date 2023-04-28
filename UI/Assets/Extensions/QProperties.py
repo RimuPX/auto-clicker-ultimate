@@ -2,20 +2,10 @@ from PyQt6.QtCore import Qt
 
 from Assets.Extensions.HelpfulFuncs import *
 from Assets.StyleSheets import *
+from Assets.Extensions.Singleton import *
 
-class QPropertyBox(QLabel):
-
-    __instance = None
-    hasInstance = False
-
-    def __new__(cls, *args):
-        if not cls.__instance:
-            cls.__instance = super(QPropertyBox, cls).__new__(cls)
-        return cls.__instance
-
+class QPropertyBox(QLabel, Singleton):
     def __init__(self):
-        if QPropertyBox.hasInstance: return
-
         super(QPropertyBox, self).__init__()
 
         # Initializes the box
@@ -36,5 +26,3 @@ class QPropertyBox(QLabel):
         self.PropertyTitle.setFont(MainSheet.propertyFont)
         self.PropertyTitle.setObjectName("PropertyTitle")
         self.layout().addWidget(self.PropertyTitle, 0, 0, 1, 2)
-
-        QPropertyBox.hasInstance = True

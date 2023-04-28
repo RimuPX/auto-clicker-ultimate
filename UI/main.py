@@ -4,6 +4,7 @@ from PyQt6.QtGui import QFontDatabase
 
 from Assets.Extensions.QNodes import *
 from Assets.Extensions.QProperties import *
+from Assets.Extensions.Singleton import *
 
 # Creates app
 app = QApplication(sys.argv)
@@ -11,18 +12,9 @@ app = QApplication(sys.argv)
 # Adds font to database
 QFontDatabase.addApplicationFont("Assets/Fonts/Sublima-ExtraBold.otf")
 
-class MainWindow(QMainWindow):
-
-    __instance = None
-    hasInstance = False
-
-    def __new__(cls, *args):
-        if not cls.__instance:
-            cls.__instance = super(QMainWindow, cls).__new__(cls)
-        return cls.__instance
+class MainWindow(QMainWindow, Singleton):
 
     def __init__(self):
-        if MainWindow.hasInstance: return
 
         super(QMainWindow, self).__init__()
 
@@ -47,11 +39,12 @@ class MainWindow(QMainWindow):
 
         # Sets up container for nodes
         self.NodeBox = QNodeBox()
+        self.p = QNodeBox.getInstance()
         self.MainLayout.setRowStretch(0, 7)
         self.MainLayout.addWidget(self.NodeBox, 0, 0, 1, 1)
 
         # Creates a panel with context buttons
-        self.ActionPanel = QActionPanel(self.centralWidget())
+        self.ActionPanel = QActionPanel(self.centralWidget().height())
         self.MainLayout.addWidget(self.ActionPanel, 1, 0, 1, 1)
 
         # Sets up container for command nodes' properties
@@ -63,7 +56,6 @@ class MainWindow(QMainWindow):
         self.shiftDown = False
         self.lmbDown = False
 
-        MainWindow.hasInstance = True
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key.Key_Control:
@@ -81,12 +73,10 @@ class MainWindow(QMainWindow):
 
     def mousePressEvent(self, event):
         self.lmbDown = True
-        print('pressed')
         super().mousePressEvent(event)
 
     def mouseReleaseEvent(self, event):
         self.lmbDown = False
-        print('unpressed')
         super().mouseReleaseEvent(event)
 
 def main():

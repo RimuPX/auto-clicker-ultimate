@@ -1,8 +1,6 @@
 from PyQt6.QtGui import QFont
 
 class MainSheet:
-    __instance = None
-
     propertyFont = QFont("Sublima ExtraBold", 18)
 
     BackgroundColor = "rgb(255, 255, 255)"
