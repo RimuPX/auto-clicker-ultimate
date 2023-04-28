@@ -79,12 +79,14 @@ class MainWindow(QMainWindow, Singleton):
         self.lmbDown = False
         super().mouseReleaseEvent(event)
 
+
 def main():
     window = MainWindow()
     window.setWindowTitle('AutoClicker Ultimate')
 
     window.show()
     sys.exit(app.exec())
+
 
 if __name__ == '__main__':
     main()

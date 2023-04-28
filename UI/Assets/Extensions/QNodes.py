@@ -1,5 +1,8 @@
 from PyQt6.QtCore import Qt
 
+from PyQt6.QtWidgets import QLabel, QVBoxLayout, QSizePolicy, QWidget, QBoxLayout
+from PyQt6.QtGui import QFont
+
 from Assets.Extensions.HelpfulFuncs import *
 from Assets.StyleSheets import *
 from Assets.Extensions.QProperties import *
@@ -20,21 +23,28 @@ class QActionPanel(QLabel, Singleton):
 class QActionButton(QLabel):
 
     def __init__(self, sign: str, pressAction): #specify function type
-        super(QActionButton, self).__init__(sign)
-        self.setFont(QFont(MainSheet.propertyFont.family(), 13))
         self.pressAction = pressAction
+        # super(QActionButton, self).__init__(sign)
+        super(QLabel, self).__init__(sign)
 
         self.setObjectName("SelectedNode")
 
-    def mouseMoveEvent(self, event):
+        self.setFont(
+            QFont(MainSheet.propertyFont.family(), 13)
+        )
+
+    def mousePressEvent(self, event):
         print('pressed')
-        self.pressAction()
-        super().mouseMoveEvent(event)
+        try:
+            self.pressAction()
+            super(QLabel, self).mouseMoveEvent(event)
+        except Exception as e:
+            print(e)
 
 class QNode(QLabel):
 
     def __init__(self, name: str, height: int, parent: QWidget):
-        super(QNode, self).__init__(name)
+        super(QLabel, self).__init__(name)
         self.setObjectName("Node")
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.setFixedHeight(height)
@@ -68,17 +78,27 @@ class QNode(QLabel):
         self.parent().layout().removeWidget(self)
         self.deleteLater()
 
+
 class QLoop(QNode):
 
     def __init__(self, parent):
-        super(QLoop, self).__init__("Loop", int(MainSheet.propertyFont.pointSize() * 2.2), parent)
-        self.setFont(QFont(MainSheet.propertyFont.family(), 18))
+        # super(QNode, self).__init__() ? хз, тут логика обрубаеться
+        # print(super(QNode, self)) ? <super: <class 'QNode'> .., почему тригериться на QLabel, хз
+        super(QLoop, self).__init__(
+            "Loop", int(MainSheet.propertyFont.pointSize() * 2.2), parent
+        )
+        self.setFont(
+            QFont(MainSheet.propertyFont.family(), 18)
+        )
         QNode.lastSelectedNode = self
+
 
 class QNodeBox(Singleton, QLabel):
 
     selectedNodes = []
     lastSelectedNode = None
+
+    list_items = None
 
     nodeHeight = 0
 
@@ -112,19 +132,22 @@ class QNodeBox(Singleton, QLabel):
         for i in range(pStart, pEnd + 1):
             QNodeBox.selectNodes([QNodeBox.getInstance().NodeList.layout().itemAt(i).widget()])
 
-    @staticmethod
-    def addNode():
+    def addNode(self):
         node = QNode("Empty", QNodeBox.getInstance().nodeHeight, QNodeBox.getInstance().NodeList)
-        QNodeBox().NodeList.layout().addWidget(node)
+        self.NodeList.layout().addWidget(node)
+        self.list_items.append(node) # локально храним, чтобы потом последний элемент(Widget) удалять из self.NodeList.layout()
 
-    @staticmethod
-    def deleteNodes():
-        print('Deleted')
+    def deleteNodes(self):
+        qhb: QVBoxLayout = self.NodeList.layout()
+        if qhb.count() >= 1 and len(self.list_items) >= 1:
+            el = self.list_items.pop(len(self.list_items)-1)
+            qhb.removeWidget(el)
         pass
 
     def __init__(self):
-
-        super(QNodeBox, self).__init__()
+        self.list_items = []
+        #super(QNodeBox, self).__init__()
+        super(QLabel, self).__init__()
 
         # Constructs node box
         self.setObjectName("Box")
@@ -150,11 +173,12 @@ class QNodeBox(Singleton, QLabel):
         self.NodeActionPanel.layout().setContentsMargins(0, 0, 5, 5)
         self.NodeActionPanel.setFixedHeight(50)
 
-        self.AddButton = QActionButton("+", QNodeBox.addNode)
-        self.RemoveButton = QActionButton("-", QNodeBox.deleteNodes)
+        self.AddButton = QActionButton("+", self.addNode)
+        self.RemoveButton = QActionButton("-", self.deleteNodes)
 
-        self.NodeActionPanel.layout().addWidget(self.RemoveButton)
         self.NodeActionPanel.layout().addWidget(self.AddButton)
+        self.NodeActionPanel.layout().addWidget(self.RemoveButton)
+
 
         # Sets cell proportions
         self.layout().setStretch(0, 3)
