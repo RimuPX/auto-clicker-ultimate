@@ -1,7 +1,7 @@
 import  sys
 
 from PyQt6.QtGui import QFontDatabase
-from PyQt6.QtWidgets import QApplication, QMainWindow, QGridLayout
+from PyQt6.QtWidgets import QMainWindow
 
 from Assets.Extensions.QNodes import *
 from Assets.Extensions.QProperties import *
@@ -41,7 +41,6 @@ class MainWindow(QMainWindow, Singleton):
 
         # Sets up container for nodes
         self.NodeBox = QNodeBox()
-        self.p = QNodeBox.getInstance()
         self.MainLayout.setRowStretch(0, 7)
         self.MainLayout.addWidget(self.NodeBox, 0, 0, 1, 1)
 

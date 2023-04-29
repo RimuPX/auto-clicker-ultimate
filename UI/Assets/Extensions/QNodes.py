@@ -3,10 +3,10 @@ from PyQt6.QtWidgets import QLabel, QVBoxLayout, QSizePolicy, QWidget, QBoxLayou
 from UI.Assets.Extensions.QProperties import *
 from UI.Assets.Extensions.Singleton import *
 
-class QActionPanel(QLabel, Singleton):
+class QActionPanel(Singleton, QLabel):
 
     def __init__(self, parentHeight: int):
-        super(QActionPanel, self).__init__()
+        super(QLabel, self).__init__()
 
         self.scaleFactor = 8
 
@@ -77,7 +77,7 @@ class QNode(QLabel):
 class QLoop(QNode, Singleton):
 
     def __init__(self, parent):
-        super(QLoop, self).__init__("Loop", int(MainSheet.propertyFont.pointSize() * 2.2), parent)
+        super(Singleton, self).__init__("Loop", int(MainSheet.propertyFont.pointSize() * 2.2), parent)
         self.setFont(QFont(MainSheet.propertyFont.family(), 18))
         QNodeBox.lastSelectedNode = self
 
