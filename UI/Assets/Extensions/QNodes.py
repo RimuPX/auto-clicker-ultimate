@@ -1,12 +1,7 @@
-from PyQt6.QtCore import Qt
-
 from PyQt6.QtWidgets import QLabel, QVBoxLayout, QSizePolicy, QWidget, QBoxLayout
-from PyQt6.QtGui import QFont
 
-from Assets.Extensions.HelpfulFuncs import *
-from Assets.StyleSheets import *
-from Assets.Extensions.QProperties import *
-from Assets.Extensions.Singleton import *
+from UI.Assets.Extensions.QProperties import *
+from UI.Assets.Extensions.Singleton import *
 
 class QActionPanel(QLabel, Singleton):
 
@@ -70,7 +65,7 @@ class QNode(QLabel):
             QNodeBox.selectNodes([self])
 
         if shiftDown:
-            QNodeBox.selectRange(QNodeBox.getInstance().NodeList.layout().indexOf(self), QNodeBox.getInstance().NodeList.layout().indexOf(QNodeBox.lastSelectedNode)) # fix
+            QNodeBox.selectRange(QNodeBox.getInstance().NodeList.layout().indexOf(self), QNodeBox.getInstance().NodeList.layout().indexOf(QNodeBox.lastSelectedNode))
         else:
             QNodeBox.lastSelectedNode = self
 
@@ -79,26 +74,18 @@ class QNode(QLabel):
         self.deleteLater()
 
 
-class QLoop(QNode):
+class QLoop(QNode, Singleton):
 
     def __init__(self, parent):
-        # super(QNode, self).__init__() ? хз, тут логика обрубаеться
-        # print(super(QNode, self)) ? <super: <class 'QNode'> .., почему тригериться на QLabel, хз
-        super(QLoop, self).__init__(
-            "Loop", int(MainSheet.propertyFont.pointSize() * 2.2), parent
-        )
-        self.setFont(
-            QFont(MainSheet.propertyFont.family(), 18)
-        )
-        QNode.lastSelectedNode = self
+        super(QLoop, self).__init__("Loop", int(MainSheet.propertyFont.pointSize() * 2.2), parent)
+        self.setFont(QFont(MainSheet.propertyFont.family(), 18))
+        QNodeBox.lastSelectedNode = self
 
 
 class QNodeBox(Singleton, QLabel):
 
     selectedNodes = []
     lastSelectedNode = None
-
-    list_items = None
 
     nodeHeight = 0
 
@@ -135,18 +122,11 @@ class QNodeBox(Singleton, QLabel):
     def addNode(self):
         node = QNode("Empty", QNodeBox.getInstance().nodeHeight, QNodeBox.getInstance().NodeList)
         self.NodeList.layout().addWidget(node)
-        self.list_items.append(node) # локально храним, чтобы потом последний элемент(Widget) удалять из self.NodeList.layout()
 
     def deleteNodes(self):
-        qhb: QVBoxLayout = self.NodeList.layout()
-        if qhb.count() >= 1 and len(self.list_items) >= 1:
-            el = self.list_items.pop(len(self.list_items)-1)
-            qhb.removeWidget(el)
         pass
 
     def __init__(self):
-        self.list_items = []
-        #super(QNodeBox, self).__init__()
         super(QLabel, self).__init__()
 
         # Constructs node box
@@ -190,7 +170,6 @@ class QNodeBox(Singleton, QLabel):
         self.layout().setSpacing(self.spacing)
         self.NodeList.layout().setSpacing(self.spacing)
         QNode.NodeLayout = self.NodeList.layout()
-
 
         # Creates essential widgets
         self.Loop = QLoop(self)

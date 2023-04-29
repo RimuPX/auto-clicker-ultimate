@@ -1,9 +1,11 @@
 import  sys
 
 from PyQt6.QtGui import QFontDatabase
+from PyQt6.QtWidgets import QApplication, QMainWindow, QGridLayout
 
 from Assets.Extensions.QNodes import *
 from Assets.Extensions.QProperties import *
+from Assets.StyleSheets import *
 from Assets.Extensions.Singleton import *
 
 # Creates app
