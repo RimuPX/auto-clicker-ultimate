@@ -1,6 +1,7 @@
 import  sys
 
-from PyQt6.QtGui import QFontDatabase
+from PyQt6.QtCore import QRect
+from PyQt6.QtGui import QFontDatabase, QCursor
 from PyQt6.QtWidgets import QMainWindow
 
 from Assets.Extensions.QNodes import *
@@ -14,7 +15,7 @@ app = QApplication(sys.argv)
 # Adds font to database
 QFontDatabase.addApplicationFont("Assets/Fonts/Sublima-ExtraBold.otf")
 
-class MainWindow(QMainWindow, Singleton):
+class MainWindow(Singleton, QMainWindow):
 
     def __init__(self):
 
@@ -52,10 +53,35 @@ class MainWindow(QMainWindow, Singleton):
         self.PropertyBox = QPropertyBox()
         self.MainLayout.addWidget(self.PropertyBox, 0, 1, self.MainLayout.rowCount(), 1)
 
+        self.w = QWidget(self.centralWidget())
+        self.MainLayout.addWidget(self.w)
+        self.w.setFixedHeight(50)
+        self.wScroll = QScrollArea(self.w)
+        self.wScroll.setLayout(QVBoxLayout())
+
+        self.wScroll.layout().addWidget(QLabel('NNN'))
+        self.wScroll.layout().addWidget(QLabel('NNN'))
+        self.wScroll.layout().addWidget(QLabel('NNN'))
+        self.wScroll.layout().addWidget(QLabel('NNN'))
+        self.wScroll.layout().addWidget(QLabel('NNN'))
+        self.wScroll.layout().addWidget(QLabel('NNN'))
+        self.wScroll.layout().addWidget(QLabel('NNN'))
+        self.wScroll.layout().addWidget(QLabel('NNN'))
+        self.wScroll.layout().addWidget(QLabel('NNN'))
+        self.wScroll.layout().addWidget(QLabel('NNN'))
+        self.wScroll.layout().addWidget(QLabel('NNN'))
+        self.wScroll.layout().addWidget(QLabel('NNN'))
+        self.wScroll.layout().addWidget(QLabel('NNN'))
+        self.wScroll.layout().addWidget(QLabel('NNN'))
+        self.wScroll.layout().addWidget(QLabel('NNN'))
+        self.wScroll.layout().addWidget(QLabel('NNN'))
+
         # Key press control
         self.controlDown = False
         self.shiftDown = False
-        self.lmbDown = False
+
+        self.mousePressPos = None
+        self.mouseHoldPos = None
 
 
     def keyPressEvent(self, event):
@@ -73,13 +99,38 @@ class MainWindow(QMainWindow, Singleton):
         super().keyReleaseEvent(event)
 
     def mousePressEvent(self, event):
-        self.lmbDown = True
-        super().mousePressEvent(event)
+        self.mousePressPos = self.mapFromGlobal(QCursor().pos())
+
+    def mouseMoveEvent(self, event):
+        self.mouseHoldPos = event.pos()
+
+        nodes = []
+        for nodeIndex in range(0, self.NodeBox.NodeList.layout().count()):
+            nodes.append(self.NodeBox.NodeList.layout().itemAt(nodeIndex).widget())
+        for node in nodes:
+            absNodePos = self.NodeBox.NodeList.mapTo(self, QPoint(node.x(), node.y()))
+            if boxesOverlap(self.mousePressPos,
+                            self.mouseHoldPos,
+                            absNodePos,
+                            QPoint(absNodePos.x() + node.width(), absNodePos.y() + node.height())):
+                self.NodeBox.selectNodes([node])
+            else:
+                self.NodeBox.deselectNodes([node])
+
+        loop = QLoop.getInstance()
+        absLoopPos = self.NodeBox.mapTo(self, QPoint(loop.x(), loop.y()))
+        if boxesOverlap(self.mousePressPos,
+                        self.mouseHoldPos,
+                        absLoopPos,
+                        QPoint(absLoopPos.x() + loop.width(), absLoopPos.y() + loop.height())):
+            self.NodeBox.selectNodes([loop])
+        else:
+            self.NodeBox.deselectNodes([loop])
+
 
     def mouseReleaseEvent(self, event):
-        self.lmbDown = False
-        super().mouseReleaseEvent(event)
-
+        self.mousePressPos = None
+        self.mouseHoldPos = None
 
 def main():
     window = MainWindow()
@@ -87,7 +138,6 @@ def main():
 
     window.show()
     sys.exit(app.exec())
-
 
 if __name__ == '__main__':
     main()

@@ -8,8 +8,9 @@ class Singleton:
         return cls.__instance
 
     def __init__(self, *args, **kwargs):
-        if Singleton.hasInstance: return
-        Singleton.hasInstance = True
+        print('f')
+        if self.hasInstance: return
+        self.hasInstance = True
 
     @classmethod
     def getInstance(cls):

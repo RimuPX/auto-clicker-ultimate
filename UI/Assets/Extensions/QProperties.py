@@ -5,9 +5,9 @@ from UI.Assets.StyleSheets import *
 from UI.Assets.Extensions.Singleton import *
 from PyQt6.QtWidgets import QLabel, QSizePolicy, QGridLayout
 
-class QPropertyBox(QLabel, Singleton):
+class QPropertyBox(Singleton, QLabel):
     def __init__(self):
-        super(QPropertyBox, self).__init__()
+        super(QLabel, self).__init__()
 
         # Initializes the box
         self.setObjectName("Box")
