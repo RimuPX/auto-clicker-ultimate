@@ -117,8 +117,8 @@ class QNodeBox(Singleton, QLabel):
         self.NodeList.layout().setContentsMargins(0, 0, 0, 0)
         self.NodeList.layout().setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
 
-        self.NodeScroll = QScrollArea()
-        self.NodeScroll.setWidget(self.NodeList)
+        self.NodeScroll = QScrollArea(self.NodeList)
+        #self.NodeScroll.setWidget(self.NodeList)
         self.NodeScroll.setFixedHeight(1000)
 
         self.NodeActionPanel = QWidget(self)

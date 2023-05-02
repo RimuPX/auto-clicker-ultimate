@@ -53,29 +53,6 @@ class MainWindow(Singleton, QMainWindow):
         self.PropertyBox = QPropertyBox()
         self.MainLayout.addWidget(self.PropertyBox, 0, 1, self.MainLayout.rowCount(), 1)
 
-        self.w = QWidget(self.centralWidget())
-        self.MainLayout.addWidget(self.w)
-        self.w.setFixedHeight(50)
-        self.wScroll = QScrollArea(self.w)
-        self.wScroll.setLayout(QVBoxLayout())
-
-        self.wScroll.layout().addWidget(QLabel('NNN'))
-        self.wScroll.layout().addWidget(QLabel('NNN'))
-        self.wScroll.layout().addWidget(QLabel('NNN'))
-        self.wScroll.layout().addWidget(QLabel('NNN'))
-        self.wScroll.layout().addWidget(QLabel('NNN'))
-        self.wScroll.layout().addWidget(QLabel('NNN'))
-        self.wScroll.layout().addWidget(QLabel('NNN'))
-        self.wScroll.layout().addWidget(QLabel('NNN'))
-        self.wScroll.layout().addWidget(QLabel('NNN'))
-        self.wScroll.layout().addWidget(QLabel('NNN'))
-        self.wScroll.layout().addWidget(QLabel('NNN'))
-        self.wScroll.layout().addWidget(QLabel('NNN'))
-        self.wScroll.layout().addWidget(QLabel('NNN'))
-        self.wScroll.layout().addWidget(QLabel('NNN'))
-        self.wScroll.layout().addWidget(QLabel('NNN'))
-        self.wScroll.layout().addWidget(QLabel('NNN'))
-
         # Key press control
         self.controlDown = False
         self.shiftDown = False
