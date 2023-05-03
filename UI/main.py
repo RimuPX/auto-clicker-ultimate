@@ -1,11 +1,10 @@
-import  sys
+import sys
 
-from PyQt6.QtCore import QRect
 from PyQt6.QtGui import QFontDatabase, QCursor
 from PyQt6.QtWidgets import QMainWindow
 
-from Assets.Extensions.QNodes import *
 from Assets.Extensions.QProperties import *
+from Assets.Extensions.QNodes import *
 from Assets.StyleSheets import *
 from Assets.Extensions.Singleton import *
 
@@ -18,7 +17,6 @@ QFontDatabase.addApplicationFont("Assets/Fonts/Sublima-ExtraBold.otf")
 class MainWindow(Singleton, QMainWindow):
 
     def __init__(self):
-
         super(QMainWindow, self).__init__()
 
         # Defines starting size and minimum size for main window
@@ -40,18 +38,18 @@ class MainWindow(Singleton, QMainWindow):
         self.MainLayout.setContentsMargins(10, 10, 10, 10)
         self.MainLayout.setSpacing(10)
 
+        # Creates a panel with context buttons
+        #self.MainLayout.addWidget(self.ActionPanel, 1, 0, 1, 1)
+
+        # Sets up container for command nodes' properties
+        self.PropertyBox = QPropertyBox()
+        print(QPropertyBox.getInstance())
+        self.MainLayout.addWidget(self.PropertyBox, 0, 1, self.MainLayout.rowCount(), 1)
+
         # Sets up container for nodes
         self.NodeBox = QNodeBox()
         self.MainLayout.setRowStretch(0, 7)
         self.MainLayout.addWidget(self.NodeBox, 0, 0, 1, 1)
-
-        # Creates a panel with context buttons
-        self.ActionPanel = QActionPanel(self.centralWidget().height())
-        self.MainLayout.addWidget(self.ActionPanel, 1, 0, 1, 1)
-
-        # Sets up container for command nodes' properties
-        self.PropertyBox = QPropertyBox()
-        self.MainLayout.addWidget(self.PropertyBox, 0, 1, self.MainLayout.rowCount(), 1)
 
         # Key press control
         self.controlDown = False

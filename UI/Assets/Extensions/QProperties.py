@@ -5,7 +5,18 @@ from UI.Assets.StyleSheets import *
 from UI.Assets.Extensions.Singleton import *
 from PyQt6.QtWidgets import QLabel, QSizePolicy, QGridLayout
 
+class QProperty(QLabel):
+    def __init__(self, key: str):
+        super(QProperty, self).__init__(key)
+
+        self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.setFixedSize(120, 22)
+        self.setStyleSheet(MainSheet.Sheet)
+        self.setFont(QFont(MainSheet.propertyFont.family(), 14))
+        self.setContentsMargins(2, 0, 0, 4)
+
 class QPropertyBox(Singleton, QLabel):
+
     def __init__(self):
         super(QLabel, self).__init__()
 
@@ -27,3 +38,11 @@ class QPropertyBox(Singleton, QLabel):
         self.PropertyTitle.setFont(MainSheet.propertyFont)
         self.PropertyTitle.setObjectName("PropertyTitle")
         self.layout().addWidget(self.PropertyTitle, 0, 0, 1, 2)
+
+    def displayNode(self, node):
+        properties = node.properties
+
+        for key in properties.keys():
+            label = QProperty(key)
+
+            self.layout().addWidget(label)

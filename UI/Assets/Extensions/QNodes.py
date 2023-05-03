@@ -1,19 +1,24 @@
-from PyQt6.QtWidgets import QVBoxLayout, QWidget
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QFont
+from PyQt6.QtWidgets import QVBoxLayout, QWidget, QLabel, QSizePolicy, QScrollArea, QHBoxLayout
 
-from UI.Assets.Extensions.QProperties import *
+from UI.Assets.Extensions.HelpfulFuncs import setShadow
+from UI.Assets.Extensions.QProperties import QPropertyBox
 from UI.Assets.Extensions.Singleton import *
+from UI.Assets.StyleSheets import MainSheet
+
 
 class QActionPanel(Singleton, QLabel):
 
-    def __init__(self, parentHeight: int):
+    def __init__(self):
         super(QLabel, self).__init__()
 
-        self.scaleFactor = 8
-
-        self.setObjectName("Box")
-        self.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
-        self.setFixedHeight(parentHeight)
-        setShadow(self)
+        self.setLayout(QHBoxLayout())
+        self.layout().setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        self.setObjectName("NodeActionPanel")
+        self.setStyleSheet(MainSheet.Sheet)
+        self.layout().setContentsMargins(0, 0, 10, 5)
+        self.setFixedSize(QNodeBox.getInstance().width(), 30)
 
 class QActionButton(QLabel):
 
@@ -21,12 +26,9 @@ class QActionButton(QLabel):
         self.pressAction = pressAction
         super(QLabel, self).__init__(sign)
 
-        self.setObjectName("SelectedNode")
-
         self.setFont(QFont(MainSheet.propertyFont.family(), 13))
 
     def mousePressEvent(self, event):
-        print('pressed')
         try:
             self.pressAction()
             super(QLabel, self).mouseMoveEvent(event)
@@ -48,7 +50,7 @@ class QNode(QLabel):
 
         self.NodeBox.NodeList.layout().addWidget(self)
 
-        self.Properties = {"Action: ": "Space", "Hold for: ": 12}
+        self.properties = {"Action: ": "Space", "Hold for: ": 3}
 
     def mousePressEvent(self, event):
         controlDown = self.window().controlDown
@@ -68,6 +70,7 @@ class QNode(QLabel):
         else:
             self.NodeBox.lastSelectedNode = self
 
+        QPropertyBox.getInstance().displayNode(self)
         self.window().mousePressEvent(event)
 
     def delete(self):
@@ -86,6 +89,7 @@ class QLoop(Singleton, QNode):
         self.setFont(QFont(MainSheet.propertyFont.family(), 18))
         self.setText('Loop')
         self.setFixedHeight(round(self.NodeBox.nodeHeight * 1.5))
+        self.setContentsMargins(3, 0, 0, 4)
 
         self.NodeBox.lastSelectedNode = self
 
@@ -117,22 +121,19 @@ class QNodeBox(Singleton, QLabel):
         self.NodeList.layout().setContentsMargins(0, 0, 0, 0)
         self.NodeList.layout().setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
 
-        self.NodeScroll = QScrollArea(self.NodeList)
-        #self.NodeScroll.setWidget(self.NodeList)
-        self.NodeScroll.setFixedHeight(1000)
+        for i in range(0, 50): self.addNode()
 
-        self.NodeActionPanel = QWidget(self)
-        self.NodeActionPanel.setLayout(QHBoxLayout())
-        self.NodeActionPanel.layout().setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
-        self.NodeActionPanel.setObjectName("NodeActionPanel")
-        self.NodeActionPanel.layout().setContentsMargins(0, 0, 5, 5)
-        self.NodeActionPanel.setFixedSize(self.width(), 50)
+        self.NodeScroll = QScrollArea()
+        self.NodeScroll.setWidget(self.NodeList)
+        self.NodeScroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
 
         self.AddButton = QActionButton("+", self.addNode)
         self.RemoveButton = QActionButton("-", self.deleteNodes)
 
+        self.NodeActionPanel = QActionPanel()
         self.NodeActionPanel.layout().addWidget(self.AddButton)
         self.NodeActionPanel.layout().addWidget(self.RemoveButton)
+        self.layout().addWidget(self.NodeActionPanel)
 
         # Sets cell proportions
         self.layout().setStretch(0, 3)
