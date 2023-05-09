@@ -1,8 +1,8 @@
 from PyQt6.QtCore import Qt
 
-from UI.Assets.Extensions.HelpfulFuncs import *
-from UI.Assets.StyleSheets import *
-from UI.Assets.Extensions.Singleton import *
+from Assets.Extensions.HelpfulFuncs import *
+from Assets.StyleSheets import *
+from Assets.Extensions.Singleton import *
 from PyQt6.QtWidgets import QLabel, QSizePolicy, QGridLayout
 
 class QProperty(QLabel):

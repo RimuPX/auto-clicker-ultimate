@@ -48,5 +48,9 @@ class MainSheet:
     border-radius: 0;
     padding: """ + str(CommonTextPadding) + """px;
     }
+    
+    QScrollArea#NodeScroll {
+    border: none;
+    }
 
     """

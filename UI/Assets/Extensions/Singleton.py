@@ -11,5 +11,5 @@ class Singleton:
         try:
             if not cls.__instance: raise AttributeError
             return cls.__instance
-        except AttributeError:
-            print("Object's instance does not exist!")
+        except AttributeError as e:
+            print("Object's instance does not exist!: ", e)
