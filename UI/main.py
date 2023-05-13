@@ -14,12 +14,12 @@ app = QApplication(sys.argv)
 # Adds font to database
 QFontDatabase.addApplicationFont("Assets/Fonts/Sublima-ExtraBold.otf")
 
-class MainWindow(Singleton, QMainWindow):
+class MainWindow(QMainWindow):
 
     def __init__(self):
         super(QMainWindow, self).__init__()
 
-        print('Crush upon clicking on hidden pixels')
+        print('Selection on scrolling down. Node move sort')
 
         # Key press control
         self.controlDown = False
@@ -55,7 +55,7 @@ class MainWindow(Singleton, QMainWindow):
         self.MainLayout.addWidget(self.PropertyBox, 0, 1, self.MainLayout.rowCount(), 1)
 
         # Sets up container for nodes
-        self.NodeBox = QNodeBox()
+        self.NodeBox = QNodeBox(self)
         app.installEventFilter(self.NodeBox)
         self.MainLayout.setRowStretch(0, 7)
         self.MainLayout.addWidget(self.NodeBox, 0, 0, 1, 1)

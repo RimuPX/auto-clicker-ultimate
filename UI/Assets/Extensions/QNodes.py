@@ -1,11 +1,13 @@
 from PyQt6.QtCore import Qt, QPoint, QEvent
-from PyQt6.QtGui import QFont
+from PyQt6.QtGui import QFont, QCursor
 from PyQt6.QtWidgets import QVBoxLayout, QWidget, QLabel, QSizePolicy, QScrollArea, QHBoxLayout
 
 from Assets.Extensions.HelpfulFuncs import setShadow, boxesOverlap
 from Assets.Extensions.QProperties import QPropertyBox
 from Assets.Extensions.Singleton import *
 from Assets.StyleSheets import MainSheet
+
+import numpy as np
 
 
 class QActionPanel(Singleton, QLabel):
@@ -60,10 +62,11 @@ class QNode(QLabel):
     def mousePressEvent(self, event):
         self.shiftDown = self.window().shiftDown
         self.controlDown = self.window().controlDown
-        self.selected = self in self.NodeBox.selectedNodes
 
+        self.selected = self in self.NodeBox.selectedNodes
         self.NodeBox.clickedOnSelectedNode = self.selected
         self.NodeBox.clickedOnNode = True
+        self.NodeBox.lastClickedNode = self
 
         if self.controlDown:
             if not self in self.NodeBox.selectedNodes:
@@ -127,22 +130,25 @@ class QLoop(Singleton, QNode):
 
 class QNodeBox(Singleton, QLabel):
 
-    def __init__(self):
+    def __init__(self, win):
         super(QLabel, self).__init__()
+
+        self.win = win
 
         # Adds node box attributes
         self.selectedNodes = []
         self.lastSelectedNode = None
+        self.lastClickedNode = None
         self.nodeHeight = self.height() // 16
         self.clickedOnSelectedNode = False
-        self.clickedOnNode = True
+        self.clickedOnNode = False
 
         # Constructs node box
         self.setObjectName("Box")
         self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
         self.setFixedWidth(self.width() // 3)
         self.setLayout(QVBoxLayout())
-        self.layout().setContentsMargins(0, 0, 0, 0)
+        self.layout().setContentsMargins(0, 5, 0, 0)
         self.layout().setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
         setShadow(self)
         self.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
@@ -161,6 +167,7 @@ class QNodeBox(Singleton, QLabel):
         self.NodeScroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.NodeScroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.NodeScroll.setWidgetResizable(True)
+        self.NodeScroll.verticalScrollBar().valueChanged.connect(self.updateMousePos)
 
         self.AddButton = QActionButton("+", self.addNode)
         self.RemoveButton = QActionButton("-", self.deleteNodes)
@@ -226,21 +233,63 @@ class QNodeBox(Singleton, QLabel):
             for node in self.selectedNodes:
                 node.delete()
 
-    def moveNodes(self, rawMousePressPos: QPoint, rawMouseHoldPos: QPoint):
-        try:
-            mousePressPos = self.NodeList.mapFrom(self, rawMousePressPos)
-            mouseHoldPos = self.NodeList.mapFrom(self, rawMouseHoldPos)
-        except Exception as e:
-            print(e)
+    def getClosestCoord(self, rootCoord, coordList):
+        closestCoord = np.max(coordList)
 
-    def mouseSelect(self, mousePressPos: QPoint, mouseHoldPos: QPoint):
+        for coord in coordList:
+            if abs(rootCoord - coord) < abs(rootCoord - closestCoord): closestCoord = coord
+
+        return closestCoord
+
+    def moveNode(self, node, indexOffset):
+        startIndex = self.NodeList.layout().indexOf(node)
+        newIndex = startIndex + indexOffset
+
+        self.NodeList.layout().removeWidget(node)
+        self.NodeList.layout().insertWidget(newIndex, node)
+
+    def moveNodes(self, rawMousePressPos: QPoint, rawMouseHoldPos: QPoint):
+        if self.NodeList.layout().count() == 0: return
+
+        mouseHoldPos = self.NodeList.mapFrom(self, rawMouseHoldPos)
+
+        topMargin = self.NodeList.contentsMargins().top()
+
+        vacantCoords = [topMargin]
+        for i in range(self.NodeList.layout().count()):
+            node = self.NodeList.layout().itemAt(i).widget()
+            vacantCoords.append(node.pos().y() + node.height())
+
+        startIndex = vacantCoords.index(self.getClosestCoord(self.lastClickedNode.y(), vacantCoords))
+        newIndex = vacantCoords.index(self.getClosestCoord(mouseHoldPos.y(), vacantCoords))
+        indexDifference = newIndex - startIndex
+
+        if indexDifference == 0: return
+
+        selectedIndexes = []
+        for node in self.selectedNodes:
+            selectedIndexes.append(self.NodeList.layout().indexOf(node))
+            if self.NodeList.layout().indexOf(node) == 0 and indexDifference < 0: return
+            if self.NodeList.layout().indexOf(node) == self.NodeList.layout().count() - 1 and indexDifference > 0: return
+
+        sortedSelectedIndexes = sorted(selectedIndexes)
+        if indexDifference > 0: sortedSelectedIndexes.reverse()
+
+        for i in sortedSelectedIndexes:
+            self.moveNode(self.NodeList.layout().itemAt(i).widget(), indexDifference)
+
+
+    def mouseSelect(self, mousePressPos: QPoint, mouseHoldPos: QPoint, startingSelectedNodes):
         legacySelectedNodes = self.selectedNodes
 
-        nodes = []
+        nodes = [self.Loop]
         for nodeIndex in range(0, self.NodeList.layout().count()):
-            nodes.append(self.NodeList.layout().itemAt(nodeIndex).widget())
+            node = self.NodeList.layout().itemAt(nodeIndex).widget()
+            if not (node in startingSelectedNodes and self.win.controlDown): nodes.append(node)
         for node in nodes:
-            absNodePos = self.NodeList.mapTo(self, QPoint(node.x(), node.y()))
+            absNodePos = None
+            if node != self.Loop: absNodePos = self.NodeList.mapTo(self, QPoint(node.x(), node.y()))
+            else: absNodePos = QPoint(node.x(), node.y())
             if boxesOverlap(mousePressPos,
                             mouseHoldPos,
                             absNodePos,
@@ -250,29 +299,38 @@ class QNodeBox(Singleton, QLabel):
             else:
                 self.deselectNodes([node])
 
-        loop = self.Loop
-        absLoopPos = QPoint(loop.x(), loop.y())
-        if boxesOverlap(mousePressPos,
-                        mouseHoldPos,
-                        absLoopPos,
-                        QPoint(absLoopPos.x() + loop.width(), absLoopPos.y() + loop.height())):
-            self.selectNodes([loop])
-            if loop not in legacySelectedNodes: self.lastSelectedNode = node
-            self.lastSelectedNode = loop
-        else:
-            self.deselectNodes([loop])
+    def updateMousePos(self):
 
-    def eventFilter(self, source, event: QEvent):
+        try:
+            self.mouseHoldPos = self.mapFromGlobal(QCursor.pos())
+            self.mousePressPos = self.mapFrom(self.window(), self.legacyMousePressPos)
+            print(self.mousePressPos)
+
+            if pow(self.mousePressPos.x() - self.mouseHoldPos.x(), 2) + pow(
+                    self.mousePressPos.y() - self.mouseHoldPos.y(), 2) > 100:
+                self.moveStarted = True
+
+            if not self.moveStarted: return False
+
+        except Exception as e:
+            print(e)
+
+        self.moveNodes(self.mousePressPos, self.mouseHoldPos)
+        # self.mouseSelect(self.mousePressPos, self.mouseHoldPos, self.startingSelectedNodes)
+
+    def eventFilter(self, source, event):
         if event.type() == QEvent.Type.MouseButtonPress and source == self.window():
-            if not self.clickedOnNode: self.deselectNodes(self.selectedNodes)
-            self.clickedOnNode = False
-            self.window().mousePressPos = event.pos()
+            if not self.clickedOnNode:
+                self.deselectNodes(self.selectedNodes)
+            self.startingSelectedNodes = self.selectedNodes
+            self.legacyMousePressPos = event.pos()
+            self.moveStarted = False
+
         if event.type() == QEvent.Type.MouseMove and source == self.window():
-            mouseHoldPos = event.pos()
-            mousePressPos = self.mapFrom(self.window(), self.window().mousePressPos)
-            self.mouseSelect(mousePressPos, mouseHoldPos)
+            self.updateMousePos()
+
         if event.type() == QEvent.Type.MouseButtonRelease and source == self.window():
-            self.clickedOnSelectedNode = False
+            self.clickedOnNode = False
         return False
 
     def keyPressEvent(self, event):
